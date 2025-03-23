@@ -20,7 +20,7 @@ export function TextInput({
 }: TextInputProps) {
   const [localValue, setLocalValue] = useState<string>(value);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const debounceTimerRef = useRef<NodeJS.Timeout>();
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Sync local value with prop value
   useEffect(() => {
