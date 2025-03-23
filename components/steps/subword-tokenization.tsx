@@ -6,6 +6,8 @@ import { LegoBlock } from "@/components/ui/lego-block"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { TextInput } from "@/components/ui/text-input"
 
+// This file implements the subword tokenization step in the LEGO tokenization visualization
+
 export default function SubwordTokenization({ 
   sampleText,
   setSampleText,
