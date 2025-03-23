@@ -1,14 +1,40 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, RefObject } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Brain, Info } from "lucide-react"
-import { DndProvider, useDrag, useDrop } from "react-dnd"
+import { DndProvider, useDrag, useDrop, ConnectDragSource, ConnectDropTarget } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
+// TypeScript interface for tokenization scheme
+interface Metric {
+  tokensGenerated: string;
+  averageTokenLength: string;
+  oovRate: string;
+  perplexity: string;
+  embeddingUtilization: string;
+  inferenceSpeed: string;
+  compressionRatio: string;
+  semanticUnderstanding: string;
+}
+
+interface TokenizationScheme {
+  id: string;
+  name: string;
+  color: string;
+  description: string;
+  metrics: Metric;
+  explanation: string;
+}
+
+interface DragItem {
+  id: string;
+  type: string;
+}
+
 // Define tokenization schemes with their metrics and explanations
-const tokenizationSchemes = [
+const tokenizationSchemes: TokenizationScheme[] = [
   {
     id: "word",
     name: "Word-level",
@@ -102,7 +128,7 @@ const tokenizationSchemes = [
 ]
 
 // Draggable tokenization scheme component
-const DraggableScheme = ({ scheme }) => {
+const DraggableScheme = ({ scheme }: { scheme: TokenizationScheme }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "TOKENIZATION_SCHEME",
     item: { id: scheme.id },
@@ -113,7 +139,7 @@ const DraggableScheme = ({ scheme }) => {
 
   return (
     <div
-      ref={drag}
+      ref={drag as unknown as RefObject<HTMLDivElement>}
       className={`${scheme.color} p-3 rounded-lg shadow-sm cursor-move transition-transform ${
         isDragging ? "opacity-50" : "opacity-100"
       } hover:shadow-md`}
@@ -126,10 +152,20 @@ const DraggableScheme = ({ scheme }) => {
 }
 
 // Model representation with drop target
-const ModelRepresentation = ({ onDrop, selectedScheme }) => {
+const ModelRepresentation = ({ 
+  onDrop, 
+  selectedScheme 
+}: { 
+  onDrop: (id: string) => void, 
+  selectedScheme: TokenizationScheme | null 
+}) => {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: "TOKENIZATION_SCHEME",
-    drop: (item) => onDrop(item.id),
+    drop: (item: DragItem) => {
+      if (item && item.id) {
+        onDrop(item.id)
+      }
+    },
     collect: (monitor) => ({
       isOver: !!monitor.isOver(),
     }),
@@ -137,10 +173,10 @@ const ModelRepresentation = ({ onDrop, selectedScheme }) => {
 
   return (
     <div
-      ref={drop}
-      className={`border-2 ${
+      ref={drop as unknown as RefObject<HTMLDivElement>}
+      className={`p-5 border-2 border-dashed rounded-lg min-h-[200px] transition-colors ${
         isOver ? "border-blue-500 bg-blue-50" : "border-gray-300"
-      } rounded-lg p-4 h-48 flex flex-col items-center justify-center transition-colors`}
+      }`}
     >
       {selectedScheme ? (
         <div className="text-center">
@@ -162,7 +198,7 @@ const ModelRepresentation = ({ onDrop, selectedScheme }) => {
 }
 
 // Typing effect component
-const TypingEffect = ({ text }) => {
+const TypingEffect = ({ text }: { text: string }) => {
   const [displayedText, setDisplayedText] = useState("")
   const [currentIndex, setCurrentIndex] = useState(0)
 
@@ -198,10 +234,10 @@ const TypingEffect = ({ text }) => {
 }
 
 // Metrics display component
-const MetricsDisplay = ({ metrics }) => {
+const MetricsDisplay = ({ metrics }: { metrics: Metric }) => {
   if (!metrics) return null
 
-  const getColorClass = (value) => {
+  const getColorClass = (value: string) => {
     switch (value) {
       case "Very high":
       case "Very low":
@@ -453,12 +489,20 @@ const MetricsDisplay = ({ metrics }) => {
   )
 }
 
-export default function TokenizationImpact({ sampleText, setSampleText }) {
-  const [selectedSchemeId, setSelectedSchemeId] = useState(null)
-  const selectedScheme = tokenizationSchemes.find((scheme) => scheme.id === selectedSchemeId)
+// Main component
+interface TokenizationImpactProps {
+  sampleText: string;
+  setSampleText: (text: string) => void;
+}
 
-  const handleDrop = (schemeId) => {
-    setSelectedSchemeId(schemeId)
+export default function TokenizationImpact({ sampleText, setSampleText }: TokenizationImpactProps) {
+  const [selectedScheme, setSelectedScheme] = useState<TokenizationScheme | null>(null)
+  
+  const handleDrop = (schemeId: string) => {
+    const scheme = tokenizationSchemes.find((s) => s.id === schemeId)
+    if (scheme) {
+      setSelectedScheme(scheme)
+    }
   }
 
   return (
