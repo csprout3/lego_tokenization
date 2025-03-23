@@ -140,7 +140,7 @@ export function PhysicsLegoBlocks({ tokens, onConnect }: PhysicsLegoBlocksProps)
     render.mouse = mouse
 
     // Handle collision events for connecting blocks
-    Events.on(engine, "collisionStart", (event) => {
+    Events.on(engine, "collisionStart", (event: Matter.IEventCollision<Matter.Engine>) => {
       const pairs = event.pairs
 
       pairs.forEach((pair) => {
@@ -185,7 +185,7 @@ export function PhysicsLegoBlocks({ tokens, onConnect }: PhysicsLegoBlocksProps)
     })
 
     // Add text rendering
-    Events.on(render, "afterRender", () => {
+    Events.on(render, "afterRender", (event: Matter.IEventTimestamped<Matter.Render>) => {
       const context = render.context
 
       blockBodies.forEach((body) => {
@@ -216,13 +216,13 @@ export function PhysicsLegoBlocks({ tokens, onConnect }: PhysicsLegoBlocksProps)
 
         // Update wall positions
         Body.setPosition(ground, {
-          x: renderRef.current.options.width / 2,
-          y: renderRef.current.options.height + 5,
+          x: (renderRef.current.options.width || 800) / 2,
+          y: (renderRef.current.options.height || 600) + 5,
         })
 
         Body.setPosition(rightWall, {
-          x: renderRef.current.options.width + 5,
-          y: renderRef.current.options.height / 2,
+          x: (renderRef.current.options.width || 800) + 5,
+          y: (renderRef.current.options.height || 600) / 2,
         })
 
         Render.setPixelRatio(renderRef.current, window.devicePixelRatio)
