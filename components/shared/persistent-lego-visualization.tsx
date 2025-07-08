@@ -1046,7 +1046,7 @@ export default function PersistentLegoVisualization({
 
   return (
     <div 
-      className={`border border-gray-300 rounded-lg bg-white shadow-md ${className}`}
+      className={`border border-gray-300 rounded-lg bg-white shadow-md ${className} w-full max-w-full overflow-x-auto`}
     >
       <div className="p-4">
         <h3 
@@ -1174,7 +1174,7 @@ export default function PersistentLegoVisualization({
           {expandedSections.tokens && (
             <motion.div
               key={`tokens-${currentSection}-${basicMethod}-${subwordMethod}-${forceRender}`}
-              className="flex flex-wrap justify-center gap-1.5 mb-4"
+              className="flex flex-wrap justify-center gap-1.5 mb-4 w-full max-w-full overflow-x-auto"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
