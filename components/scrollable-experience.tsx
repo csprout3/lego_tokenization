@@ -36,7 +36,7 @@ export default function ScrollableExperience({
 }: ScrollableExperienceProps) {
   const [sampleText, setSampleText] = useState(initialText)
   const [activeSection, setActiveSection] = useState("introduction")
-  const [discoveredSections, setDiscoveredSections] = useState<string[]>(["introduction"])
+  const [discoveredSections, setDiscoveredSections] = useState<string[]>([sections[0].id])
   const [textContentWidth, setTextContentWidth] = useState(0)
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const contentRef = useRef<HTMLDivElement>(null)
@@ -225,146 +225,117 @@ export default function ScrollableExperience({
         )}
       </AnimatePresence>
 
-      {/* Main content with fixed sidebar */}
-      <div className="flex relative">
-        {/* Fixed navigation sidebar - only visible after scrolling past landing */}
-        <AnimatePresence>
-          {hasScrolledPastLanding && (
-            <motion.nav
-              className="fixed top-[72px] left-0 bottom-0 w-64 p-4 z-10 bg-slate-50/80 backdrop-blur-sm"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <ul className="space-y-1">
-                {sections.map((section, index) => {
-                  const isDiscovered = discoveredSections.includes(section.id)
-                  const isActive = activeSection === section.id
-
-                  return (
-                    <AnimatePresence key={section.id} mode="wait">
-                      {isDiscovered && (
-                        <motion.li
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <button
-                            onClick={() => scrollToSection(section.id)}
-                            className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center ${
-                              isActive
-                                ? `${section.color.replace("bg-", "bg-opacity-20 ")} border-l-4 ${section.color}`
-                                : "hover:bg-slate-100/50"
-                            }`}
+      {/* Responsive flex layout for sidebar, content, and visualization */}
+      <div className="relative w-full">
+        <div className="flex flex-row w-full max-w-7xl mx-auto min-h-screen pt-0 lg:pt-[72px]">
+          {/* Sidebar - always visible, shrinks to show only numbers on small screens, FIXED */}
+          <AnimatePresence>
+            {hasScrolledPastLanding && (
+              <motion.nav
+                className="z-10 bg-slate-50/80 backdrop-blur-sm flex-shrink-0 border-r border-yellow-100 fixed top-[72px] left-0 h-[calc(100vh-72px)] flex flex-col items-center px-1 py-4 w-12 md:w-20 lg:w-32 transition-all duration-300"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <ul className="flex flex-col gap-2 w-full items-center">
+                  {sections.map((section, index) => {
+                    const isDiscovered = discoveredSections.includes(section.id)
+                    const isActive = activeSection === section.id
+                    return (
+                      <AnimatePresence key={section.id} mode="wait">
+                        {isDiscovered && (
+                          <motion.li
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="w-full flex justify-center"
                           >
-                            <div
-                              className={`w-6 h-6 rounded-full ${section.color} flex items-center justify-center mr-3`}
+                            <button
+                              onClick={() => scrollToSection(section.id)}
+                              className={`flex flex-col items-center w-10 md:w-16 lg:w-full py-2 rounded-lg transition-colors ${
+                                isActive
+                                  ? `${section.color.replace("bg-", "bg-opacity-20 ")} border-l-3 ${section.color}`
+                                  : "hover:bg-slate-100/50"
+                              }`}
                             >
-                              <span className="text-xs text-white font-medium">{index + 1}</span>
-                            </div>
-                            <span className={isActive ? "font-medium text-yellow-900" : "text-yellow-800"}>
-                              {section.label}
-                            </span>
-                          </button>
-                        </motion.li>
-                      )}
-                    </AnimatePresence>
+                              <div
+                                className={`w-8 h-8 md:w-10 md:h-10 rounded-full ${section.color} flex items-center justify-center mb-1`}
+                              >
+                                <span className="text-xs md:text-sm text-white font-medium">{index + 1}</span>
+                              </div>
+                              <span className={`hidden lg:block text-xs md:text-sm ${isActive ? "font-medium text-yellow-900" : "text-yellow-800"}`}>
+                                {section.label}
+                              </span>
+                            </button>
+                          </motion.li>
+                        )}
+                      </AnimatePresence>
+                    )
+                  })}
+                </ul>
+              </motion.nav>
+            )}
+          </AnimatePresence>
+
+          {/* Main content and LEGO visualization side by side, no extra right space */}
+          <div className="flex-1 flex flex-row min-w-0">
+            {/* Main content - scrollable, with left margin to account for fixed sidebar */}
+            <main
+              className="flex-1 min-w-0 p-4 md:p-8 transition-all duration-300 bg-slate-50"
+              ref={contentRef}
+              style={{
+                paddingTop: hasScrolledPastLanding ? "72px" : "0",
+                marginLeft: hasScrolledPastLanding ? "48px" : "0", // Space for sidebar on mobile
+                marginRight: hasScrolledPastLanding && shouldShowVisualization ? "0px" : "0", // Space for visualization
+              }}
+            >
+              <div className="max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto">
+                {sections.map((section) => {
+                  const SectionComponent = section.Component
+                  const isVisualizationSection = ["introduction", "basic", "subword", "token-id", "embeddings"].includes(section.id)
+                  return (
+                    <div
+                      key={section.id}
+                      id={section.id}
+                      ref={(el) => {
+                        sectionRefs.current[section.id] = el
+                      }}
+                      className="p-6 mb-16 min-h-[80vh] scroll-mt-20"
+                    >
+                      {/* Content with responsive width constraints */}
+                      <div
+                        className={isVisualizationSection
+                          ? "lg:max-w-[650px] md:max-w-[600px]"
+                          : ""}
+                        ref={textContentRef}
+                      >
+                        <SectionComponent
+                          sampleText={sampleText}
+                          setSampleText={(text: string) => {
+                            setSampleText(text)
+                          }}
+                          hideVisualization={isVisualizationSection}
+                        />
+                      </div>
+                    </div>
                   )
                 })}
-              </ul>
-            </motion.nav>
-          )}
-        </AnimatePresence>
-
-        {/* Content area - centered and not shifting */}
-        <main
-          className="w-full p-4 md:p-8 transition-all duration-300 bg-slate-50"
-          ref={contentRef}
-          style={{
-            paddingTop: hasScrolledPastLanding ? "72px" : "0", // Add padding when header is fixed
-          }}
-        >
-          {/* Single persistent visualization - desktop view */}
-          <AnimatePresence mode="wait">
+              </div>
+            </main>
+            {/* LEGO visualization FIXED to the right side */}
             {hasScrolledPastLanding && shouldShowVisualization && (
-              <motion.div
-                key="desktop-visualization"
-                className="fixed top-[88px] hidden lg:block z-10 transition-all duration-300"
-                style={visualizationStyle}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <PersistentLegoVisualization 
-                  key={activeSection} // Add key to ensure proper rerendering
+              <div className="fixed top-[72px] right-0 w-32 md:w-40 lg:w-64 h-[calc(100vh-72px)] flex items-start justify-center pt-8 z-10">
+                <PersistentLegoVisualization
+                  key={activeSection}
                   sampleText={sampleText}
                   currentSection={activeSection}
-                  className="shadow-md max-h-[80vh] overflow-y-auto"
+                  className="shadow-md max-h-[80vh] overflow-y-auto w-full"
                 />
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
-
-          {/* Mobile visualization - bottom fixed on smaller screens */}
-          <AnimatePresence mode="wait">
-            {hasScrolledPastLanding && shouldShowVisualization && (
-              <motion.div
-                key="mobile-visualization"
-                className="fixed bottom-0 left-0 right-0 lg:hidden z-10 bg-white/95 backdrop-blur-sm border-t border-gray-200"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="p-4 max-w-lg mx-auto">
-                  <PersistentLegoVisualization 
-                    key={activeSection} // Add key to ensure proper rerendering
-                    sampleText={sampleText}
-                    currentSection={activeSection}
-                    className="shadow-md"
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div className="max-w-4xl mx-auto">
-            {sections.map((section) => {
-              const SectionComponent = section.Component
-              const isVisualizationSection = ["introduction", "basic", "subword", "token-id", "embeddings"].includes(section.id)
-
-              return (
-                <div
-                  key={section.id}
-                  id={section.id}
-                  ref={(el) => {
-                    sectionRefs.current[section.id] = el
-                  }}
-                  className="p-6 mb-16 min-h-[80vh] scroll-mt-20"
-                >
-                  {/* Content with responsive width constraints */}
-                  <div 
-                    className={isVisualizationSection 
-                      ? "lg:max-w-[650px] md:max-w-[600px]" 
-                      : ""}
-                    ref={textContentRef}
-                  >
-                    <SectionComponent
-                      sampleText={sampleText}
-                      setSampleText={(text: string) => {
-                        console.log("Setting sample text:", text)
-                        setSampleText(text)
-                      }}
-                      hideVisualization={isVisualizationSection}
-                    />
-                  </div>
-                </div>
-              )
-            })}
           </div>
-        </main>
+        </div>
       </div>
     </div>
   )
